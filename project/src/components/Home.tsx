@@ -1,14 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 
 const Home: React.FC = () => {
-  const { user, loading, error, fetchUser } = useUser();
+  const { user, loading, error } = useUser();
 
-  useEffect(() => {
-    // Fetch user data when component mounts
-    fetchUser();
-  }, [fetchUser]);
+  // We don't need to fetch user data on component mount
+  // User data is fetched when the login button is pressed in the Login component
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -28,7 +26,7 @@ const Home: React.FC = () => {
               <button className="!rounded-button whitespace-nowrap cursor-pointer bg-purple-600 text-white px-6 py-2 font-medium hover:bg-purple-700 transition duration-300 ease-in-out">
                 음악 업로드
               </button>
-              
+
               {user ? (
                 <div className="flex items-center space-x-4">
                   <div className="bg-gray-100 rounded-lg p-2">
