@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../utils/env';
+import { useUser } from '../contexts/UserContext';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { fetchUser } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,7 +17,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,12 +46,17 @@ const Login: React.FC = () => {
         throw new Error(data.message || '로그인에 실패했습니다.');
       }
 
-      // Handle successful login (e.g., store token, redirect)
+      // Handle successful login
       console.log('Login successful:', data);
-      // You might want to store the token in localStorage or context
-      // localStorage.setItem('token', data.token);
-      // And redirect the user
-      // history.push('/dashboard');
+
+      // Fetch user data
+      try {
+        await fetchUser();
+        // Redirect to home page
+        navigate('/')
+      } catch (fetchError) {
+        console.error('Error fetching user data:', fetchError);
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');
