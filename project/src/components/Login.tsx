@@ -22,7 +22,18 @@ const Login: React.FC = () => {
         credentials: 'include', // Include credentials (cookies) with the request
       });
 
-      const data = await response.json();
+      // Check if the response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      let data;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Handle non-JSON response (like HTML)
+        const text = await response.text();
+        console.error('Received non-JSON response:', text);
+        throw new Error('서버에서 예상치 못한 응답을 받았습니다. 나중에 다시 시도해주세요.');
+      }
 
       if (!response.ok) {
         if (response.status === 401 && data.code === "ACCOUT-004") {
