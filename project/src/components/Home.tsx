@@ -29,11 +29,18 @@ const Home: React.FC = () => {
 
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <div className="bg-gray-100 rounded-lg p-2">
-                    <p className="text-sm font-medium text-gray-800">
-                      안녕하세요, {user.nickname}님!
-                    </p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                  <div className="flex items-center bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 shadow-sm border border-indigo-100">
+                    <div className="flex-shrink-0 mr-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                        {user.nickname.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-indigo-800">
+                        안녕하세요, {user.nickname}님!
+                      </p>
+                      <p className="text-xs text-indigo-600">{user.email}</p>
+                    </div>
                   </div>
                   <button 
                     onClick={() => window.location.reload()} 
@@ -71,11 +78,51 @@ const Home: React.FC = () => {
                 공짜 <span className="text-indigo-600">음악 스트리밍</span>
               </h1>
               {user && (
-                <div className="mt-4 bg-white bg-opacity-80 p-4 rounded-lg shadow-md">
-                  <h2 className="text-xl font-semibold text-indigo-700">사용자 정보</h2>
-                  <p className="mt-2"><span className="font-medium">ID:</span> {user.id}</p>
-                  <p><span className="font-medium">닉네임:</span> {user.nickname}</p>
-                  <p><span className="font-medium">이메일:</span> {user.email}</p>
+                <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl shadow-lg border border-indigo-100 backdrop-blur-sm">
+                  <div className="flex items-center mb-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-2xl mr-4">
+                      {user.nickname.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-indigo-800">사용자 정보</h2>
+                      <p className="text-indigo-600 text-sm">Welcome back to JJAP Cloud!</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 mt-2">
+                    <div className="flex items-center bg-white bg-opacity-70 p-3 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">ID</p>
+                        <p className="font-medium text-gray-800">{user.id}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center bg-white bg-opacity-70 p-3 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">닉네임</p>
+                        <p className="font-medium text-gray-800">{user.nickname}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center bg-white bg-opacity-70 p-3 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">이메일</p>
+                        <p className="font-medium text-gray-800">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
