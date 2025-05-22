@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { API_URL } from '../utils/env';
 import { useUser } from '../contexts/UserContext';
+import { uploadMusic } from '../utils/api';
 
 const MusicUpload: React.FC = () => {
   const [name, setName] = useState<string>('');
@@ -42,20 +42,8 @@ const MusicUpload: React.FC = () => {
       formData.append('runtime', runtime);
       formData.append('musicFile', musicFile);
 
-      // Send POST request to API
-      const response = await fetch(`${API_URL}/musics`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies (JSESSIONID)
-        mode: 'cors', // Enable CORS
-        headers: {
-          'Origin': window.location.origin,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('음악 업로드에 실패했습니다.');
-      }
+      // Use the uploadMusic function from the API utility
+      await uploadMusic(formData);
 
       // Success
       setSuccess(true);

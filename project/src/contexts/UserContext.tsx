@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { API_URL } from '../utils/env';
+import { fetchCurrentUser } from '../utils/api';
+import { clearCsrfToken } from '../utils/csrf';
 
 // Define the user interface
 interface User {
@@ -22,7 +23,7 @@ const UserContext = createContext<UserContextType>({
   user: null,
   loading: false,
   error: null,
-  fetchUser: async () => {},
+  fetchUser: () => Promise.resolve(),
   logout: () => {},
 });
 
@@ -45,22 +46,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/users/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': window.location.origin,
-        },
-        credentials: 'include', // Include cookies (JSESSIONID)
-        mode: 'cors', // Enable CORS
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const data = await response.json();
-      setUser(data);
+      const data = await fetchCurrentUser();
+      setUser(data as User);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching user data:', err);
@@ -72,6 +59,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Function to logout
   const logout = () => {
     setUser(null);
+    clearCsrfToken(); // Clear the CSRF token on logout
   };
 
   return (

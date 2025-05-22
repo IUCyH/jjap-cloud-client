@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { API_URL } from '../utils/env';
 import { useUser } from '../contexts/UserContext';
+import { storeCsrfToken } from '../utils/csrf';
+import { login as apiLogin } from '../utils/api';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -17,39 +18,17 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': window.location.origin,
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include', // Include credentials (cookies) with the request
-        mode: 'cors', // Enable CORS
-      });
-
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      let data;
-
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        // Handle non-JSON response (like HTML)
-        const text = await response.text();
-        console.error('Received non-JSON response:', text);
-        throw new Error('서버에서 예상치 못한 응답을 받았습니다. 나중에 다시 시도해주세요.');
-      }
-
-      if (!response.ok) {
-        if (response.status === 401 && data.code === "ACCOUT-004") {
-          throw new Error("아이디 혹은 비밀번호가 틀렸습니다.");
-        }
-        throw new Error(data.message || '로그인에 실패했습니다.');
-      }
+      // Use the apiLogin function from the API utility
+      const data = await apiLogin(email, password);
 
       // Handle successful login
       console.log('Login successful:', data);
+
+      // Store CSRF token if available
+      if (typeof data === 'object' && data !== null && 'csrfToken' in data) {
+        storeCsrfToken(data.csrfToken as string);
+        console.log('CSRF token stored');
+      }
 
       // Fetch user data
       try {

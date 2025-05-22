@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { API_URL } from '../utils/env';
+import { register as apiRegister } from '../utils/api';
 
 const Register: React.FC = () => {
   const [nickname, setNickname] = useState('');
@@ -38,37 +38,12 @@ const Register: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': window.location.origin,
-        },
-        body: JSON.stringify({ 
-          nickname, 
-          email, 
-          password 
-        }),
-        credentials: 'include', // Include cookies (JSESSIONID)
-        mode: 'cors', // Enable CORS
+      // Use the apiRegister function from the API utility
+      const data = await apiRegister({ 
+        nickname, 
+        email, 
+        password 
       });
-
-      // Check if the response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      let data;
-
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        // Handle non-JSON response (like HTML)
-        const text = await response.text();
-        console.error('Received non-JSON response:', text);
-        throw new Error('서버에서 예상치 못한 응답을 받았습니다. 나중에 다시 시도해주세요.');
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || '회원가입에 실패했습니다.');
-      }
 
       // Handle successful registration
       console.log('Registration successful:', data);
