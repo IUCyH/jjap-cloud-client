@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { uploadMusic } from '../utils/api';
+import { format } from 'date-fns';
 
 const MusicUpload: React.FC = () => {
   const [name, setName] = useState<string>('');
   const [singer, setSinger] = useState<string>('');
-  const [runtime, setRuntime] = useState<string>('');
+  const [createTime, setCreateTime] = useState<string>(format(new Date(), 'yyyy-MM-dd HH:mm:ss'));
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,15 +20,8 @@ const MusicUpload: React.FC = () => {
     e.preventDefault();
 
     // Validate form
-    if (!name || !singer || !runtime || !musicFile) {
+    if (!name || !singer || !createTime || !musicFile) {
       setError('모든 필드를 입력해주세요.');
-      return;
-    }
-
-    // Validate runtime is a number
-    const runtimeNumber = parseInt(runtime, 10);
-    if (isNaN(runtimeNumber) || runtimeNumber <= 0) {
-      setError('재생 시간은 양수여야 합니다.');
       return;
     }
 
@@ -39,7 +33,7 @@ const MusicUpload: React.FC = () => {
       const formData = new FormData();
       formData.append('name', name);
       formData.append('singer', singer);
-      formData.append('runtime', runtime);
+      formData.append('createTime', createTime);
       formData.append('musicFile', musicFile);
 
       // Use the uploadMusic function from the API utility
@@ -50,7 +44,7 @@ const MusicUpload: React.FC = () => {
       // Reset form
       setName('');
       setSinger('');
-      setRuntime('');
+      setCreateTime(format(new Date(), 'yyyy-MM-dd HH:mm:ss'));
       setMusicFile(null);
 
       // Redirect to music list after 2 seconds
@@ -178,19 +172,19 @@ const MusicUpload: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="runtime" className="block text-sm font-medium text-gray-700 mb-2">
-                재생 시간 (초)
+              <label htmlFor="createTime" className="block text-sm font-medium text-gray-700 mb-2">
+                생성 시간
               </label>
               <input
-                type="number"
-                id="runtime"
-                value={runtime}
-                onChange={(e) => setRuntime(e.target.value)}
+                type="text"
+                id="createTime"
+                value={createTime}
+                onChange={(e) => setCreateTime(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="재생 시간을 입력하세요 (초)"
-                min="1"
+                placeholder="YYYY-MM-DD HH:MM:SS"
                 disabled={loading}
               />
+              <p className="mt-1 text-sm text-gray-500">형식: YYYY-MM-DD HH:MM:SS</p>
             </div>
 
             <div>
