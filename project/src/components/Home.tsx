@@ -20,12 +20,12 @@ const Home: React.FC = () => {
             </div>
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <button className="!rounded-button whitespace-nowrap cursor-pointer bg-indigo-600 text-white px-6 py-2 font-medium hover:bg-indigo-700 transition duration-300 ease-in-out">
+              <Link to="/musics" className="!rounded-button whitespace-nowrap cursor-pointer bg-indigo-600 text-white px-6 py-2 font-medium hover:bg-indigo-700 transition duration-300 ease-in-out">
                 음악 탐색
-              </button>
-              <button className="!rounded-button whitespace-nowrap cursor-pointer bg-purple-600 text-white px-6 py-2 font-medium hover:bg-purple-700 transition duration-300 ease-in-out">
+              </Link>
+              <Link to="/upload-music" className="!rounded-button whitespace-nowrap cursor-pointer bg-purple-600 text-white px-6 py-2 font-medium hover:bg-purple-700 transition duration-300 ease-in-out">
                 음악 업로드
-              </button>
+              </Link>
 
               {user ? (
                 <div className="flex items-center space-x-4">
@@ -126,9 +126,9 @@ const Home: React.FC = () => {
                 </div>
               )}
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <button className="!rounded-button whitespace-nowrap cursor-pointer bg-indigo-600 text-white px-8 py-3 text-lg font-medium hover:bg-indigo-700 transition duration-300 ease-in-out">
+                <Link to="/musics" className="!rounded-button whitespace-nowrap cursor-pointer bg-indigo-600 text-white px-8 py-3 text-lg font-medium hover:bg-indigo-700 transition duration-300 ease-in-out">
                   좋아하는 음악을 찾아보세요!
-                </button>
+                </Link>
               </div>
             </div>
             <div className="relative">
