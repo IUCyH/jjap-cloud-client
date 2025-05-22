@@ -3,13 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../utils/env';
 import { useUser } from '../contexts/UserContext';
 
-// Define the Music interface
+// Define the Music interface based on server response
 interface Music {
   id: number;
-  title: string;
-  artist: string;
-  uploadDate: string;
-  // Add other properties as needed
+  originalName: string;
+  name: string;
+  singer: string;
+  runtime: number;
 }
 
 const MusicList: React.FC = () => {
@@ -19,6 +19,13 @@ const MusicList: React.FC = () => {
   const [date, setDate] = useState<string>('');
   const { user } = useUser();
   const navigate = useNavigate();
+
+  // Helper function to format runtime from seconds to minutes:seconds
+  const formatRuntime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   // Fetch music data when component mounts or date changes
   useEffect(() => {
@@ -154,14 +161,18 @@ const MusicList: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {musics.map((music) => (
                     <div key={music.id} className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
-                      <h3 className="text-lg font-semibold text-indigo-800">{music.title}</h3>
-                      <p className="text-sm text-indigo-600">{music.artist}</p>
-                      <p className="text-xs text-gray-500 mt-2">업로드: {new Date(music.uploadDate).toLocaleDateString()}</p>
-                      <button 
-                        className="mt-3 inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      >
-                        재생
-                      </button>
+                      <h3 className="text-lg font-semibold text-indigo-800">{music.name}</h3>
+                      <p className="text-sm text-indigo-600">가수: {music.singer}</p>
+                      <p className="text-xs text-gray-500 mt-1">원본 파일명: {music.originalName}</p>
+                      <p className="text-xs text-gray-500 mt-1">재생 시간: {formatRuntime(music.runtime)}</p>
+                      <div className="flex justify-between items-center mt-3">
+                        <button 
+                          className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          재생
+                        </button>
+                        <span className="text-xs text-gray-400">ID: {music.id}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
