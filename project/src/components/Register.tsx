@@ -42,12 +42,15 @@ const Register: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': window.location.origin,
         },
         body: JSON.stringify({ 
           nickname, 
           email, 
           password 
         }),
+        credentials: 'include', // Include cookies (JSESSIONID)
+        mode: 'cors', // Enable CORS
       });
 
       // Check if the response is JSON before parsing

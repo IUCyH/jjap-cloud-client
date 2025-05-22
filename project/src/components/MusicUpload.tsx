@@ -17,7 +17,7 @@ const MusicUpload: React.FC = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!name || !singer || !runtime || !musicFile) {
       setError('모든 필드를 입력해주세요.');
@@ -47,6 +47,10 @@ const MusicUpload: React.FC = () => {
         method: 'POST',
         body: formData,
         credentials: 'include', // Include cookies (JSESSIONID)
+        mode: 'cors', // Enable CORS
+        headers: {
+          'Origin': window.location.origin,
+        },
       });
 
       if (!response.ok) {
@@ -60,7 +64,7 @@ const MusicUpload: React.FC = () => {
       setSinger('');
       setRuntime('');
       setMusicFile(null);
-      
+
       // Redirect to music list after 2 seconds
       setTimeout(() => {
         navigate('/musics');

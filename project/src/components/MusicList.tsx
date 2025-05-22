@@ -37,8 +37,10 @@ const MusicList: React.FC = () => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Origin': window.location.origin,
           },
           credentials: 'include', // Include cookies (JSESSIONID)
+          mode: 'cors', // Enable CORS
         });
 
         if (!response.ok) {
