@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { API_URL } from '../utils/env';
 
@@ -14,6 +14,7 @@ const MusicPlayer: React.FC = () => {
   const [music, setMusic] = useState<MusicDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [volume, setVolume] = useState<number>(1); // Default volume is 1 (max)
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Fetch music details
@@ -276,6 +277,57 @@ const MusicPlayer: React.FC = () => {
     }
   };
 
+  // Load saved volume from localStorage when component mounts
+  useEffect(() => {
+    const savedVolume = localStorage.getItem('musicPlayerVolume');
+    if (savedVolume !== null) {
+      setVolume(parseFloat(savedVolume));
+    }
+  }, []);
+
+  // Handle volume change
+  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    localStorage.setItem('musicPlayerVolume', newVolume.toString());
+
+    // Apply volume to audio element
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
+  }, []);
+
+  // Apply volume to audio element when it changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  // Set up audio element ref with volume
+  const setAudioRef = useCallback((element: HTMLAudioElement | null) => {
+    if (element) {
+      // Set initial volume
+      element.volume = volume;
+
+      // Add event listener for when audio is loaded
+      const handleCanPlay = () => {
+        element.volume = volume;
+      };
+
+      // Clean up previous listeners if any
+      if (audioRef.current) {
+        audioRef.current.removeEventListener('canplay', handleCanPlay);
+      }
+
+      // Add new listener
+      element.addEventListener('canplay', handleCanPlay);
+
+      // Store the ref
+      audioRef.current = element;
+    }
+  }, [volume]);
+
   // Set up audio player when music details are loaded
   useEffect(() => {
     if (music && !loading) {
@@ -333,7 +385,7 @@ const MusicPlayer: React.FC = () => {
                   {/* Audio Player */}
                   <div className="w-full bg-white rounded-lg p-4 shadow-inner">
                     <audio 
-                      ref={audioRef}
+                      ref={setAudioRef}
                       controls 
                       className="w-full" 
                       preload="auto"
@@ -342,6 +394,21 @@ const MusicPlayer: React.FC = () => {
                     >
                       Your browser does not support the audio element.
                     </audio>
+
+                    {/* Volume Control */}
+                    <div className="mt-4 flex items-center">
+                      <span className="text-indigo-600 mr-2">볼륨:</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="ml-2 text-indigo-600 w-10 text-right">{Math.round(volume * 100)}%</span>
+                    </div>
                   </div>
                 </div>
               ) : (
