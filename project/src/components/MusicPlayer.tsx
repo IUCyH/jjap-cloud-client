@@ -64,7 +64,7 @@ const MusicPlayer: React.FC = () => {
   const setupAudioPlayer = () => {
     if (audioRef.current && id) {
       // Create MediaSource URL for streaming
-      const audioUrl = `${API_URL}/music/stream/${id}`;
+      const audioUrl = `${API_URL}/musics/${id}`;
 
       // Modern browsers automatically handle range requests for audio elements,
       // but we'll implement a custom solution to ensure the Range header is properly sent
@@ -78,7 +78,7 @@ const MusicPlayer: React.FC = () => {
           // Function to fetch audio chunks with Range header
           const fetchAudioChunk = async (start: number, end: number) => {
             try {
-              const response = await fetch(`${API_URL}/music/stream/${id}`, {
+              const response = await fetch(`${API_URL}/musics/${id}`, {
                 method: 'GET',
                 headers: {
                   'Range': `bytes=${start}-${end}`,
