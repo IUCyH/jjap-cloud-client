@@ -107,13 +107,25 @@ const MusicPlayer: React.FC = () => {
             const blobUrl = URL.createObjectURL(blob);
 
             // Set the audio source to the blob URL
-            audioRef.current!.src = audioUrl; // Fall back to direct URL which will use browser's native Range handling
+            audioRef.current!.src = blobUrl; // Use the blob URL created from the fetched chunk
 
             console.log('Initial audio chunk loaded');
           } catch (chunkError) {
             console.error('Error loading initial audio chunk:', chunkError);
-            // Fall back to direct URL which will use browser's native Range handling
-            audioRef.current!.src = audioUrl;
+            // Try a different approach - fetch a smaller chunk
+            try {
+              console.log('Retrying with a smaller chunk size...');
+              const smallerChunk = await fetchAudioChunk(0, 65535); // Try with 64KB
+              const retryBlob = new Blob([smallerChunk], { type: 'audio/mpeg' });
+              const retryBlobUrl = URL.createObjectURL(retryBlob);
+              audioRef.current!.src = retryBlobUrl;
+              console.log('Retry successful with smaller chunk');
+            } catch (retryError) {
+              console.error('Retry failed:', retryError);
+              setError('Failed to load audio. Please try again later.');
+              // As a last resort, try the direct URL
+              audioRef.current!.src = audioUrl;
+            }
           }
 
           // Add event listeners for debugging and error handling
@@ -131,10 +143,36 @@ const MusicPlayer: React.FC = () => {
           });
         } catch (err) {
           console.error('Error setting up audio stream:', err);
-          setError('Failed to set up audio stream. Please try again.');
 
-          // Fall back to direct URL as a last resort
-          audioRef.current!.src = audioUrl;
+          // Try one more approach with a very small chunk as a last resort
+          try {
+            console.log('Attempting last resort approach with minimal chunk...');
+            const response = await fetch(`${API_URL}/musics/${id}`, {
+              method: 'GET',
+              headers: {
+                'Range': 'bytes=0-16383', // Just 16KB
+                'Origin': window.location.origin,
+              },
+              credentials: 'include',
+              mode: 'cors',
+            });
+
+            if (response.ok) {
+              const minimalChunk = await response.arrayBuffer();
+              const lastResortBlob = new Blob([minimalChunk], { type: 'audio/mpeg' });
+              const lastResortUrl = URL.createObjectURL(lastResortBlob);
+              audioRef.current!.src = lastResortUrl;
+              console.log('Last resort approach successful');
+            } else {
+              throw new Error('Last resort fetch failed');
+            }
+          } catch (lastError) {
+            console.error('All approaches failed:', lastError);
+            setError('Failed to set up audio stream. Please try again later.');
+
+            // Only as an absolute last resort, try the direct URL
+            audioRef.current!.src = audioUrl;
+          }
         }
       };
 
