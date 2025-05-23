@@ -64,7 +64,7 @@ const MusicPlayer: React.FC = () => {
   const setupAudioPlayer = () => {
     if (audioRef.current && id) {
       // Create MediaSource URL for streaming
-      const audioUrl = `${API_URL}/musics/${id}`;
+      const audioUrl = `${API_URL}/musics/stream/${id}`;
 
       // Set up error handling first to catch any errors during setup
       audioRef.current.addEventListener('error', (e) => {
@@ -102,7 +102,7 @@ const MusicPlayer: React.FC = () => {
           // Function to fetch audio chunks with Range header
           const fetchAudioChunk = async (start: number, end: number) => {
             try {
-              const response = await fetch(`${API_URL}/musics/${id}`, {
+              const response = await fetch(`${API_URL}/musics/stream/${id}`, {
                 method: 'GET',
                 headers: {
                   'Range': `bytes=${start}-${end}`,
@@ -114,9 +114,13 @@ const MusicPlayer: React.FC = () => {
                 mode: 'cors',
               });
 
-              if (!response.ok) {
+              // For range requests, we expect a 206 Partial Content response
+              if (response.status !== 206 && !response.ok) {
                 throw new Error(`Failed to fetch audio chunk: ${response.status} ${response.statusText}`);
               }
+
+              // Log the response status for debugging
+              console.log(`Server returned status: ${response.status} ${response.statusText}`);
 
               // Log content type for debugging
               const contentType = response.headers.get('Content-Type');
@@ -199,7 +203,7 @@ const MusicPlayer: React.FC = () => {
           try {
             console.log('Attempting last resort approach with minimal chunk...');
             // Try to detect the content type first
-            const headResponse = await fetch(`${API_URL}/musics/${id}`, {
+            const headResponse = await fetch(`${API_URL}/musics/stream/${id}`, {
               method: 'HEAD',
               headers: {
                 'Origin': window.location.origin,
@@ -213,7 +217,7 @@ const MusicPlayer: React.FC = () => {
             console.log(`Server content type from HEAD request: ${serverContentType}`);
 
             // Fetch a minimal chunk
-            const response = await fetch(`${API_URL}/musics/${id}`, {
+            const response = await fetch(`${API_URL}/musics/stream/${id}`, {
               method: 'GET',
               headers: {
                 'Range': 'bytes=0-16383', // Just 16KB
@@ -224,7 +228,10 @@ const MusicPlayer: React.FC = () => {
               mode: 'cors',
             });
 
-            if (response.ok) {
+            // For range requests, we expect a 206 Partial Content response
+            if (response.status === 206 || response.ok) {
+              // Log the response status for debugging
+              console.log(`Last resort fetch returned status: ${response.status} ${response.statusText}`);
               const minimalChunk = await response.arrayBuffer();
               const responseContentType = response.headers.get('Content-Type');
               console.log(`Content-Type from GET response: ${responseContentType}`);
