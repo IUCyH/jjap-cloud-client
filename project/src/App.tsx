@@ -7,6 +7,7 @@ import { UserProvider } from './contexts/UserContext';
 import Home from './components/Home';
 import MusicList from './components/MusicList';
 import MusicUpload from './components/MusicUpload';
+import MusicPlayer from './components/MusicPlayer';
 
 const App: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/musics" element={<MusicList />} />
+          <Route path="/music/player/:id" element={<MusicPlayer />} />
           <Route path="/upload-music" element={<MusicUpload />} />
           <Route path="/" element={<Home />} />
         </Routes>
