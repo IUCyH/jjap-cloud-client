@@ -107,7 +107,8 @@ const MusicPlayer: React.FC = () => {
                 headers: {
                   'Range': `bytes=${start}-${end}`,
                   'Origin': window.location.origin,
-                  'Accept': 'audio/*, */*',
+                  // Specify multiple audio formats in Accept header for better compatibility
+                  'Accept': 'audio/mpeg, audio/mp4, audio/aac, audio/ogg, audio/*, */*',
                 },
                 credentials: 'include',
                 mode: 'cors',
@@ -116,6 +117,10 @@ const MusicPlayer: React.FC = () => {
               if (!response.ok) {
                 throw new Error(`Failed to fetch audio chunk: ${response.status} ${response.statusText}`);
               }
+
+              // Log content type for debugging
+              const contentType = response.headers.get('Content-Type');
+              console.log(`Server returned Content-Type: ${contentType}`);
 
               return await response.arrayBuffer();
             } catch (error) {
@@ -127,7 +132,9 @@ const MusicPlayer: React.FC = () => {
           // Try direct URL first as it's the most reliable method
           try {
             console.log('Trying direct URL first...');
-            audioRef.current!.src = audioUrl;
+            // Add audio type parameter to help the browser identify the content
+            const audioUrlWithType = `${audioUrl}?type=audio/mpeg`;
+            audioRef.current!.src = audioUrlWithType;
 
             // Return early to avoid further processing
             return;
@@ -141,7 +148,10 @@ const MusicPlayer: React.FC = () => {
             // Fetch the first 128KB to get metadata
             const initialChunk = await fetchAudioChunk(0, 131071);
             // Try multiple MIME types to increase compatibility
-            const blob = new Blob([initialChunk], { type: 'audio/mpeg' });
+            // Use a more specific MIME type for better browser compatibility
+            const blob = new Blob([initialChunk], { 
+              type: 'audio/mpeg' // MP3 is widely supported
+            });
             const blobUrl = URL.createObjectURL(blob);
 
             // Set the audio source to the blob URL
@@ -154,16 +164,32 @@ const MusicPlayer: React.FC = () => {
             try {
               console.log('Retrying with a smaller chunk size...');
               const smallerChunk = await fetchAudioChunk(0, 65535); // Try with 64KB
-              // Try with a more generic MIME type
-              const retryBlob = new Blob([smallerChunk], { type: 'audio/*' });
-              const retryBlobUrl = URL.createObjectURL(retryBlob);
-              audioRef.current!.src = retryBlobUrl;
-              console.log('Retry successful with smaller chunk');
+              // Try with alternative MIME types
+              const mimeTypes = ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/*'];
+              let success = false;
+
+              // Try each MIME type until one works
+              for (const mimeType of mimeTypes) {
+                if (success) break;
+                try {
+                  const retryBlob = new Blob([smallerChunk], { type: mimeType });
+                  const retryBlobUrl = URL.createObjectURL(retryBlob);
+                  audioRef.current!.src = retryBlobUrl;
+                  console.log(`Retry successful with MIME type: ${mimeType}`);
+                  success = true;
+                } catch (mimeError) {
+                  console.error(`Failed with MIME type ${mimeType}:`, mimeError);
+                }
+              }
+
+              if (!success) {
+                throw new Error('All MIME types failed');
+              }
             } catch (retryError) {
               console.error('Retry failed:', retryError);
               setError('Failed to load audio. Please try again later.');
-              // As a last resort, try the direct URL again
-              audioRef.current!.src = audioUrl;
+              // As a last resort, try the direct URL again with type parameter
+              audioRef.current!.src = `${audioUrl}?type=audio/mpeg`;
             }
           }
         } catch (err) {
@@ -172,12 +198,27 @@ const MusicPlayer: React.FC = () => {
           // Try one more approach with a very small chunk as a last resort
           try {
             console.log('Attempting last resort approach with minimal chunk...');
+            // Try to detect the content type first
+            const headResponse = await fetch(`${API_URL}/musics/${id}`, {
+              method: 'HEAD',
+              headers: {
+                'Origin': window.location.origin,
+              },
+              credentials: 'include',
+              mode: 'cors',
+            });
+
+            // Get content type from server if available
+            const serverContentType = headResponse.headers.get('Content-Type');
+            console.log(`Server content type from HEAD request: ${serverContentType}`);
+
+            // Fetch a minimal chunk
             const response = await fetch(`${API_URL}/musics/${id}`, {
               method: 'GET',
               headers: {
                 'Range': 'bytes=0-16383', // Just 16KB
                 'Origin': window.location.origin,
-                'Accept': 'audio/*, */*',
+                'Accept': 'audio/mpeg, audio/mp4, audio/aac, audio/ogg, audio/*, */*',
               },
               credentials: 'include',
               mode: 'cors',
@@ -185,20 +226,41 @@ const MusicPlayer: React.FC = () => {
 
             if (response.ok) {
               const minimalChunk = await response.arrayBuffer();
-              // Try with a different MIME type
-              const lastResortBlob = new Blob([minimalChunk], { type: 'audio/*' });
+              const responseContentType = response.headers.get('Content-Type');
+              console.log(`Content-Type from GET response: ${responseContentType}`);
+
+              // Determine the best MIME type to use
+              let bestMimeType = 'audio/mpeg'; // Default to MP3
+
+              // Use server-provided content type if available and it's an audio type
+              if (serverContentType && serverContentType.includes('audio/')) {
+                bestMimeType = serverContentType;
+              } else if (responseContentType && responseContentType.includes('audio/')) {
+                bestMimeType = responseContentType;
+              }
+
+              console.log(`Using MIME type: ${bestMimeType}`);
+
+              // Try with the determined MIME type
+              const lastResortBlob = new Blob([minimalChunk], { type: bestMimeType });
               const lastResortUrl = URL.createObjectURL(lastResortBlob);
               audioRef.current!.src = lastResortUrl;
               console.log('Last resort approach successful');
             } else {
-              throw new Error('Last resort fetch failed');
+              throw new Error(`Last resort fetch failed: ${response.status} ${response.statusText}`);
             }
           } catch (lastError) {
             console.error('All approaches failed:', lastError);
             setError('Failed to set up audio stream. Please try again later.');
 
-            // Only as an absolute last resort, try the direct URL
-            audioRef.current!.src = audioUrl;
+            // Only as an absolute last resort, try the direct URL with type parameter
+            audioRef.current!.src = `${audioUrl}?type=audio/mpeg`;
+
+            // Add event listener to detect if this final attempt fails
+            audioRef.current!.addEventListener('error', () => {
+              console.error('Final direct URL attempt failed');
+              setError('Unable to play this audio file. The format may not be supported by your browser.');
+            });
           }
         }
       };
