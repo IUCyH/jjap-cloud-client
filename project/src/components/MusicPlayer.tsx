@@ -66,6 +66,30 @@ const MusicPlayer: React.FC = () => {
       // Create MediaSource URL for streaming
       const audioUrl = `${API_URL}/musics/${id}`;
 
+      // Set up error handling first to catch any errors during setup
+      audioRef.current.addEventListener('error', (e) => {
+        console.error('Audio playback error:', e);
+        const errorMessage = audioRef.current?.error ? 
+          `Error code: ${audioRef.current.error.code}, message: ${audioRef.current.error.message}` : 
+          'Unknown error';
+        console.error('Detailed error:', errorMessage);
+        setError('Failed to play the audio. Please try again.');
+      });
+
+      // Add event listeners for debugging
+      audioRef.current.addEventListener('loadstart', () => {
+        console.log('Audio loading started');
+      });
+
+      audioRef.current.addEventListener('canplay', () => {
+        console.log('Audio can play now');
+      });
+
+      // Log when seeking occurs to verify Range requests
+      audioRef.current.addEventListener('seeking', () => {
+        console.log('Audio seeking - browser will send Range header');
+      });
+
       // Modern browsers automatically handle range requests for audio elements,
       // but we'll implement a custom solution to ensure the Range header is properly sent
 
@@ -83,6 +107,7 @@ const MusicPlayer: React.FC = () => {
                 headers: {
                   'Range': `bytes=${start}-${end}`,
                   'Origin': window.location.origin,
+                  'Accept': 'audio/*, */*',
                 },
                 credentials: 'include',
                 mode: 'cors',
@@ -99,10 +124,23 @@ const MusicPlayer: React.FC = () => {
             }
           };
 
+          // Try direct URL first as it's the most reliable method
+          try {
+            console.log('Trying direct URL first...');
+            audioRef.current!.src = audioUrl;
+
+            // Return early to avoid further processing
+            return;
+          } catch (directUrlError) {
+            console.error('Direct URL approach failed:', directUrlError);
+            // Continue with chunk-based approaches
+          }
+
           // For initial metadata, fetch the first chunk
           try {
             // Fetch the first 128KB to get metadata
             const initialChunk = await fetchAudioChunk(0, 131071);
+            // Try multiple MIME types to increase compatibility
             const blob = new Blob([initialChunk], { type: 'audio/mpeg' });
             const blobUrl = URL.createObjectURL(blob);
 
@@ -116,31 +154,18 @@ const MusicPlayer: React.FC = () => {
             try {
               console.log('Retrying with a smaller chunk size...');
               const smallerChunk = await fetchAudioChunk(0, 65535); // Try with 64KB
-              const retryBlob = new Blob([smallerChunk], { type: 'audio/mpeg' });
+              // Try with a more generic MIME type
+              const retryBlob = new Blob([smallerChunk], { type: 'audio/*' });
               const retryBlobUrl = URL.createObjectURL(retryBlob);
               audioRef.current!.src = retryBlobUrl;
               console.log('Retry successful with smaller chunk');
             } catch (retryError) {
               console.error('Retry failed:', retryError);
               setError('Failed to load audio. Please try again later.');
-              // As a last resort, try the direct URL
+              // As a last resort, try the direct URL again
               audioRef.current!.src = audioUrl;
             }
           }
-
-          // Add event listeners for debugging and error handling
-          audioRef.current!.addEventListener('loadstart', () => {
-            console.log('Audio loading started');
-          });
-
-          audioRef.current!.addEventListener('canplay', () => {
-            console.log('Audio can play now');
-          });
-
-          // Log when seeking occurs to verify Range requests
-          audioRef.current!.addEventListener('seeking', () => {
-            console.log('Audio seeking - browser will send Range header');
-          });
         } catch (err) {
           console.error('Error setting up audio stream:', err);
 
@@ -152,6 +177,7 @@ const MusicPlayer: React.FC = () => {
               headers: {
                 'Range': 'bytes=0-16383', // Just 16KB
                 'Origin': window.location.origin,
+                'Accept': 'audio/*, */*',
               },
               credentials: 'include',
               mode: 'cors',
@@ -159,7 +185,8 @@ const MusicPlayer: React.FC = () => {
 
             if (response.ok) {
               const minimalChunk = await response.arrayBuffer();
-              const lastResortBlob = new Blob([minimalChunk], { type: 'audio/mpeg' });
+              // Try with a different MIME type
+              const lastResortBlob = new Blob([minimalChunk], { type: 'audio/*' });
               const lastResortUrl = URL.createObjectURL(lastResortBlob);
               audioRef.current!.src = lastResortUrl;
               console.log('Last resort approach successful');
@@ -177,12 +204,6 @@ const MusicPlayer: React.FC = () => {
       };
 
       customAudioSource();
-
-      // Handle errors
-      audioRef.current.addEventListener('error', (e) => {
-        console.error('Audio playback error:', e);
-        setError('Failed to play the audio. Please try again.');
-      });
     }
   };
 
@@ -246,7 +267,9 @@ const MusicPlayer: React.FC = () => {
                       ref={audioRef}
                       controls 
                       className="w-full" 
-                      preload="metadata"
+                      preload="auto"
+                      crossOrigin="anonymous"
+                      autoPlay={false}
                     >
                       Your browser does not support the audio element.
                     </audio>
